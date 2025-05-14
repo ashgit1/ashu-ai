@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indian States Weather Report</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .font-selector {
+            display: flex;
+            align-items: center;
+        }
+        
+        .font-selector label {
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        
+        select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+            font-size: 16px;
+        }
+        
+        .states-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .state-card {
+            padding: 15px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            text-align: center;
+            border: 2px solid transparent;
+        }
+        
+        .state-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border-color: #3498db;
+        }
+        
+        /* Modal styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            width: 90%;
+            max-width: 700px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.2);
+            padding: 25px;
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            line-height: 30px;
+            text-align: center;
+            border-radius: 50%;
+            background-color: #f1f1f1;
+        }
+        
+        .modal-close:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .weather-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .weather-emoji {
+            font-size: 48px;
+            text-align: center;
+            margin: 10px 0 25px;
+        }
+        
+        .weather-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .weather-item {
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+        
+        .weather-item h3 {
+            color: #3498db;
+            margin-bottom: 10px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-style: italic;
+            color: #777;
+        }
+        
+        /* Font classes */
+        .font-arial { font-family: Arial, sans-serif; }
+        .font-georgia { font-family: Georgia, serif; }
+        .font-verdana { font-family: Verdana, sans-serif; }
+        .font-tahoma { font-family: Tahoma, sans-serif; }
+        .font-courier { font-family: 'Courier New', monospace; }
+    </style>
+</head>
+<body>
+    <div class="container font-arial" id="main-container">
+        <h1>Indian State Capitals Weather Report</h1>
+        
+        <div class="controls">
+            <div class="font-selector">
+                <label for="font-select">Select Font:</label>
+                <select id="font-select">
+                    <option value="font-arial">Arial</option>
+                    <option value="font-georgia">Georgia</option>
+                    <option value="font-verdana">Verdana</option>
+                    <option value="font-tahoma">Tahoma</option>
+                    <option value="font-courier">Courier New</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="states-grid" id="states-grid"></div>
+        
+        <!-- Weather Modal -->
+        <div class="modal-overlay" id="weather-modal">
+            <div class="modal-content">
+                <span class="modal-close" id="close-modal">&times;</span>
+                <div class="weather-header">
+                    <h2 id="capital-name">Capital City</h2>
+                    <h3 id="state-name">State</h3>
+                </div>
+                
+                <div class="weather-emoji" id="weather-emoji">
+                    <!-- Weather emoji will be placed here -->
+                </div>
+                
+                <div class="weather-details" id="weather-details">
+                    <!-- Weather data will be inserted here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State data with capitals and coordinates (for more accurate weather data)
+        const statesData = [
+            { state: "Andhra Pradesh", capital: "Amaravati", lat: 16.5062, lon: 80.6480 },
+            { state: "Arunachal Pradesh", capital: "Itanagar", lat: 27.0844, lon: 93.6053 },
+            { state: "Assam", capital: "Dispur", lat: 26.1433, lon: 91.7898 },
+            { state: "Bihar", capital: "Patna", lat: 25.5941, lon: 85.1376 },
+            { state: "Chhattisgarh", capital: "Raipur", lat: 21.2514, lon: 81.6296 },
+            { state: "Goa", capital: "Panaji", lat: 15.4909, lon: 73.8278 },
+            { state: "Gujarat", capital: "Gandhinagar", lat: 23.2156, lon: 72.6369 },
+            { state: "Haryana", capital: "Chandigarh", lat: 30.7333, lon: 76.7794 },
+            { state: "Himachal Pradesh", capital: "Shimla", lat: 31.1048, lon: 77.1734 },
+            { state: "Jharkhand", capital: "Ranchi", lat: 23.3441, lon: 85.3096 },
+            { state: "Karnataka", capital: "Bengaluru", lat: 12.9716, lon: 77.5946 },
+            { state: "Kerala", capital: "Thiruvananthapuram", lat: 8.5241, lon: 76.9366 },
+            { state: "Madhya Pradesh", capital: "Bhopal", lat: 23.2599, lon: 77.4126 },
+            { state: "Maharashtra", capital: "Mumbai", lat: 19.0760, lon: 72.8777 },
+            { state: "Manipur", capital: "Imphal", lat: 24.8170, lon: 93.9368 },
+            { state: "Meghalaya", capital: "Shillong", lat: 25.5788, lon: 91.8933 },
+            { state: "Mizoram", capital: "Aizawl", lat: 23.7271, lon: 92.7176 },
+            { state: "Nagaland", capital: "Kohima", lat: 25.6747, lon: 94.1086 },
+            { state: "Odisha", capital: "Bhubaneswar", lat: 20.2961, lon: 85.8245 },
+            { state: "Punjab", capital: "Chandigarh", lat: 30.7333, lon: 76.7794 },
+            { state: "Rajasthan", capital: "Jaipur", lat: 26.9124, lon: 75.7873 },
+            { state: "Sikkim", capital: "Gangtok", lat: 27.3389, lon: 88.6065 },
+            { state: "Tamil Nadu", capital: "Chennai", lat: 13.0827, lon: 80.2707 },
+            { state: "Telangana", capital: "Hyderabad", lat: 17.3850, lon: 78.4867 },
+            { state: "Tripura", capital: "Agartala", lat: 23.8315, lon: 91.2868 },
+            { state: "Uttar Pradesh", capital: "Lucknow", lat: 26.8467, lon: 80.9462 },
+            { state: "Uttarakhand", capital: "Dehradun", lat: 30.3165, lon: 78.0322 },
+            { state: "West Bengal", capital: "Kolkata", lat: 22.5726, lon: 88.3639 },
+            { state: "Delhi", capital: "New Delhi", lat: 28.6139, lon: 77.2090 }
+        ];
+
+        // API Key for OpenWeatherMap (get your own free API key from openweathermap.org)
+        const apiKey = '63295b0afec75615029605505ebb1485'; // Replace with your OpenWeatherMap API key
+
+        // Get weather emoji based on condition code
+        function getWeatherEmoji(weatherId) {
+            // Weather condition codes based on OpenWeatherMap API
+            if (weatherId >= 200 && weatherId < 300) {
+                return "⛈️"; // Thunderstorm
+            } else if (weatherId >= 300 && weatherId < 400) {
+                return "🌦️"; // Drizzle
+            } else if (weatherId >= 500 && weatherId < 600) {
+                return weatherId >= 511 ? "🌧️" : "🌦️"; // Rain (heavy if >= 511)
+            } else if (weatherId >= 600 && weatherId < 700) {
+                return "❄️"; // Snow
+            } else if (weatherId >= 700 && weatherId < 800) {
+                return "🌫️"; // Atmosphere (fog, mist, etc.)
+            } else if (weatherId === 800) {
+                return "☀️"; // Clear sky
+            } else if (weatherId > 800 && weatherId < 900) {
+                return weatherId > 802 ? "☁️" : "⛅"; // Clouds (more clouds if > 802)
+            } else {
+                return "🌡️"; // Default
+            }
+        }
+
+        // Create state cards
+        function createStateCards() {
+            const statesGrid = document.getElementById('states-grid');
+            
+            statesData.forEach(stateObj => {
+                const stateCard = document.createElement('div');
+                stateCard.className = 'state-card';
+                stateCard.textContent = stateObj.state;
+                stateCard.addEventListener('click', () => showWeather(stateObj));
+                statesGrid.appendChild(stateCard);
+            });
+        }
+
+        // Fetch real weather data from OpenWeatherMap API
+        async function fetchWeatherData(lat, lon) {
+            try {
+                // Use coordinates for more accurate results
+                const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`);
+                
+                if (!response.ok) {
+                    throw new Error(`Weather API error: ${response.status}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error("Failed to fetch weather data:", error);
+                // Return mock data as fallback if API call fails
+                return generateFallbackData();
+            }
+        }
+
+        // Generate fallback data if API call fails
+        function generateFallbackData() {
+            const temperature = Math.floor(Math.random() * 35) + 10;
+            const conditions = ["Clear", "Clouds", "Rain", "Thunderstorm", "Mist"];
+            const condition = conditions[Math.floor(Math.random() * conditions.length)];
+            
+            return {
+                main: {
+                    temp: temperature,
+                    humidity: Math.floor(Math.random() * 60) + 30,
+                    pressure: Math.floor(Math.random() * 50) + 980
+                },
+                weather: [
+                    {
+                        id: condition === "Clear" ? 800 : 
+                             condition === "Clouds" ? 802 :
+                             condition === "Rain" ? 500 :
+                             condition === "Thunderstorm" ? 200 : 701,
+                        main: condition
+                    }
+                ],
+                wind: {
+                    speed: Math.floor(Math.random() * 30) + 5
+                },
+                visibility: (Math.floor(Math.random() * 10) + 1) * 1000,
+                name: "Unknown", // Will be overridden by the city name in showWeather
+                sys: {
+                    country: "IN"
+                },
+                _isFallback: true // Flag to indicate this is fallback data
+            };
+        }
+
+        // Show weather for selected state
+        async function showWeather(stateObj) {
+            const weatherModal = document.getElementById('weather-modal');
+            const capitalName = document.getElementById('capital-name');
+            const stateName = document.getElementById('state-name');
+            const weatherDetails = document.getElementById('weather-details');
+            const weatherEmoji = document.getElementById('weather-emoji');
+            
+            // Display the modal
+            weatherModal.classList.add('active');
+            capitalName.textContent = stateObj.capital;
+            stateName.textContent = stateObj.state;
+            
+            // Show loading
+            weatherDetails.innerHTML = '<div class="loading">Fetching real weather data...</div>';
+            weatherEmoji.innerHTML = '⌛'; // Hourglass emoji for loading
+            
+            try {
+                // Fetch real weather data
+                const weatherData = await fetchWeatherData(stateObj.lat, stateObj.lon);
+                
+                // Set weather emoji based on weather condition code
+                const weatherId = weatherData.weather[0].id;
+                weatherEmoji.innerHTML = getWeatherEmoji(weatherId);
+                
+                // Convert visibility from meters to kilometers
+                const visibilityKm = (weatherData.visibility / 1000).toFixed(1);
+                
+                // Convert wind speed from m/s to km/h (OpenWeatherMap uses m/s)
+                const windSpeedKmh = (weatherData.wind.speed * 3.6).toFixed(1);
+                
+                // Remove loading
+                weatherDetails.innerHTML = '';
+                
+                // Create weather items with real data
+                const items = [
+                    { title: "Temperature", value: `${Math.round(weatherData.main.temp)}°C` },
+                    { title: "Condition", value: weatherData.weather[0].main },
+                    { title: "Humidity", value: `${weatherData.main.humidity}%` },
+                    { title: "Wind Speed", value: `${windSpeedKmh} km/h` },
+                    { title: "Visibility", value: `${visibilityKm} km` },
+                    { title: "Pressure", value: `${weatherData.main.pressure} hPa` }
+                ];
+                
+                // Add fallback notice if using generated data
+                if (weatherData._isFallback) {
+                    const fallbackNotice = document.createElement('div');
+                    fallbackNotice.className = 'weather-item';
+                    fallbackNotice.style.gridColumn = '1 / -1';
+                    fallbackNotice.style.backgroundColor = '#fff3cd';
+                    fallbackNotice.style.color = '#856404';
+                    fallbackNotice.innerHTML = `<p><strong>Note:</strong> Using simulated data. To get real weather data, please add your OpenWeatherMap API key in the code.</p>`;
+                    weatherDetails.appendChild(fallbackNotice);
+                }
+                
+                items.forEach(item => {
+                    const weatherItem = document.createElement('div');
+                    weatherItem.className = 'weather-item';
+                    weatherItem.innerHTML = `<h3>${item.title}</h3><p>${item.value}</p>`;
+                    weatherDetails.appendChild(weatherItem);
+                });
+                
+            } catch (error) {
+                console.error("Error displaying weather:", error);
+                weatherDetails.innerHTML = `<div class="weather-item" style="grid-column: 1 / -1; background-color: #f8d7da; color: #721c24;"><h3>Error</h3><p>Failed to fetch weather data. Please try again later.</p></div>`;
+                weatherEmoji.innerHTML = '❓'; // Question mark emoji for error
+            }
+        }
+
+        // Close modal when clicking the X
+        document.getElementById('close-modal').addEventListener('click', function() {
+            document.getElementById('weather-modal').classList.remove('active');
+        });
+
+        // Close modal when clicking outside the content
+        document.getElementById('weather-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.classList.remove('active');
+            }
+        });
+
+        // Change font
+        document.getElementById('font-select').addEventListener('change', function() {
+            const container = document.getElementById('main-container');
+            const modalContent = document.querySelector('.modal-content');
+            
+            // Remove all font classes
+            container.classList.remove('font-arial', 'font-georgia', 'font-verdana', 'font-tahoma', 'font-courier');
+            modalContent.classList.remove('font-arial', 'font-georgia', 'font-verdana', 'font-tahoma', 'font-courier');
+            
+            // Add selected font class to both container and modal
+            container.classList.add(this.value);
+            modalContent.classList.add(this.value);
+        });
+
+        // Initialize the app
+        window.addEventListener('DOMContentLoaded', () => {
+            createStateCards();
+        });
+    </script>
+</body>
+</html>
